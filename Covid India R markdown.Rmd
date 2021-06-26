@@ -1,0 +1,92 @@
+---
+title: "Covid 19 Prediction in India"
+author: "Mohamed Ashmil KT"
+date: "26/06/2021"
+output:
+  html_document:
+    df_print: paged
+---
+
+Covid 19 Future Prediction in India
+
+Loading needed Libraries and loading the dataset
+```{r}
+pacman::p_load(covid19.analytics,dplyr,prophet,lubridate,ggplot2)
+covid_data= covid19.data(case='ts-confirmed')
+```
+Filterling out the data of India and Checking the data
+```{r}
+asd=covid_data%>%
+  filter(Country.Region=="India")
+str(asd)
+type_of(asd)
+class(asd)
+```
+
+Data Cleaning
+```{r}
+#converting rows into columns
+asd=data.frame(t(asd))
+
+
+
+#change the date from index to a variable
+asd=cbind(asd,ds=rownames(asd),row.names=NULL)
+asd=asd[,c(2,1)]
+
+#renaming column
+colnames(asd)=c("ds","y")
+
+#removing other rows than date and case
+asd=asd[-c(1:4),]
+
+str(asd)
+#specifying R the order of date is y-m-d
+asd$ds=ymd(asd$ds)
+asd$y=as.numeric(asd$y)
+
+str(asd)
+```
+
+Plotting the data to see the struture
+```{r}
+plot(asd)
+qplot(ds,y,data = asd, main = "Covid in India")
+```
+
+Forcasting
+```{r}
+m=prophet(asd) #we don't have enough data to capture seasonality
+```
+we don't have enough data to capture seasonality
+
+Prediction
+Making a data frame for future 28 days with the given data
+```{r}
+future=make_future_dataframe(m,periods = 28,freq = "day",include_history = T)
+forecast=predict(m,future)
+```
+
+Ploting the Forcast
+```{r}
+plot(m,forecast)
+dyplot.prophet(m,forecast)
+```
+
+Finding the forecast components
+```{r}
+prophet_plot_components(m, forecast)
+```
+
+Model Perfomance
+```{r}
+pred=forecast$yhat[1:521]
+actual= m$history$y
+plot(actual, pred)
+abline(lm(pred~actual),col="blue")
+```
+
+Checking Summary to see accuracy
+```{r}
+summary(lm(pred~actual))
+```
